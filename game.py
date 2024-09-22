@@ -67,10 +67,10 @@ class Show:
         Style().configure("TMenubutton", background=frame.cget("background"))
 
         bf = Frame(frame, background=frame.cget("background"))
-        bf.pack(fill="x")
+        bf.pack(fill="x", pady=(10, 0))
 
         Button(bf, text="New save", command=Saves.new_save, foreground="#cc0000", activeforeground="#cc0000").pack(
-            fill="x", side="left", expand=True, pady=(10, 0))
+            fill="x", side="left", expand=True)
         Button(bf, text="🗑", command=lambda: Saves.delete_save(range(len(saves))), width=3, foreground="#cc0000",
                activeforeground="#cc0000").pack(side="left", padx=(10, 0))
 
