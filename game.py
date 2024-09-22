@@ -121,7 +121,7 @@ class Show:
 
         # noinspection SpellCheckingInspection
         Button(option_frame, text="🌐", width=3, command=lambda:
-               w_open("https://www.github.com/AbnormalNormality/Alias-Progression-Roguelite/"), foreground="#83cbff",
+               w_open("https://www.github.com/AbnormalNormality/Wip-Roguelite/"), foreground="#83cbff",
                activeforeground="#83cbff").pack(side="top", pady=(5, 0))
 
         Button(option_frame, text="❌", width=3, command=main.destroy, foreground="#ff0000",
