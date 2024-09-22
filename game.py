@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter.messagebox import askokcancel
-from tkinter.ttk import OptionMenu, Style
+from tkinter.ttk import OptionMenu, Style, Checkbutton
 from os.path import exists
 from json import dump, load
 from datetime import datetime
@@ -29,7 +29,7 @@ sort_type = StringVar(value="Recent")
 mixer.init()
 
 
-def parser(dct):
+def saves_parser(dct):
     for key, value in dct.items():
         if key in ["last_opened"]:
             try:
@@ -39,11 +39,49 @@ def parser(dct):
     return dct
 
 
-saves = load(open("saves.json"), object_hook=parser)
+saves = load(open("saves.json"), object_hook=saves_parser)
 
 saves = sorted(saves, key=lambda x: x["last_opened"], reverse=True)
 
 main.protocol("WM_DELETE_WINDOW", lambda: (Saves.save(), main.destroy()))
+
+
+def settings_parser(dct):
+    for key, value in dct.items():
+        if key in ["startup", "resolution"]:
+            try:
+                dct[key] = StringVar(value=value)
+            except (ValueError, TypeError):
+                pass
+
+        if key in ["fullscreen"]:
+            try:
+                dct[key] = StringVar(value=value)
+            except (ValueError, TypeError):
+                pass
+    return dct
+
+
+if not exists("settings.json") or not open("settings.json").read().strip():
+    dump({}, open("settings.json", "w"))
+
+settings = load(open("settings.json"), object_hook=settings_parser)
+
+if "startup" not in settings:
+    settings.update({"startup": StringVar(value="Home")})
+
+resolutions = ["640x360", "960x540", "1280x720", "1600x900", "1920x1080"]
+
+if "resolution" not in settings:
+    settings.update({"resolution": StringVar(value=resolutions[0])})
+
+size = [int(a) for a in settings["resolution"].get().split("x")]
+resize_window(main, size[0], size[1])
+
+if "fullscreen" not in settings:
+    settings.update({"fullscreen": BooleanVar(value=False)})
+
+main.attributes("-fullscreen", settings["fullscreen"].get())
 
 
 class Show:
@@ -91,6 +129,8 @@ class Show:
 
     @staticmethod
     def home():
+        global saves
+
         grid(2, 2)
         main.columnconfigure(0, weight=0)
         Show.show_tabs("home", row=0, rowspan=r_(), column=0, sticky="ns")
@@ -124,7 +164,7 @@ class Show:
                w_open("https://www.github.com/AbnormalNormality/Wip-Roguelite/"), foreground="#83cbff",
                activeforeground="#83cbff").pack(side="top", pady=(5, 0))
 
-        Button(option_frame, text="❌", width=3, command=main.destroy, foreground="#ff0000",
+        Button(option_frame, text="❌", width=3, command=lambda: (Saves.save(), main.destroy()), foreground="#ff0000",
                activeforeground="#ff0000").pack(side="bottom", pady=(0, 5))
 
         mixer.music.stop()
@@ -134,6 +174,33 @@ class Show:
         grid(1, 2)
         main.columnconfigure(0, weight=0)
         Show.show_tabs("settings", row=0, column=0, sticky="ns")
+
+        frame = ScrollableFrame(main, horizontal_scrollbar=False, row=0, column=1, sticky="nsew")
+        frame.configure(pady=20, background="#e0e0e0")
+
+        bf = Frame(frame, background=frame.cget("background"))
+        bf.pack()
+
+        Label(bf, text="When opening the game, go to:", background=frame.cget("background")).pack(side="left",
+                                                                                                  padx=(0, 5))
+        OptionMenu(bf, settings["startup"], settings["startup"].get(), *["Home", "Saves", "Settings"]).pack(side="left")
+        Style().configure("TMenubutton", background=frame.cget("background"))
+
+        bf = Frame(frame, background=frame.cget("background"))
+        bf.pack(pady=(10, 0))
+
+        Label(bf, text="Resolution:", background=frame.cget("background")).pack(side="left", padx=(0, 10))
+        OptionMenu(bf, settings["resolution"], settings["resolution"].get(), *resolutions,
+                   command=lambda _: resize_window(main, int(settings["resolution"].get().split("x")[0]),
+                                                   int(settings["resolution"].get().split("x")[1]))).pack(side="left")
+        Style().configure("TMenubutton", background=frame.cget("background"))
+
+        bf = Frame(frame, background=frame.cget("background"))
+        bf.pack(pady=(10, 0))
+
+        Checkbutton(bf, variable=settings["fullscreen"], text="Fullscreen",
+                    command=lambda: main.attributes("-fullscreen", settings["fullscreen"].get())).pack(side="left")
+        Style().configure("TCheckbutton", background=frame.cget("background"))
 
 
 class Saves:
@@ -154,19 +221,31 @@ class Saves:
 
     @staticmethod
     def save():
-        def serializer(obj):
+        def saves_serializer(obj):
             if isinstance(obj, datetime):
                 return obj.isoformat()
             raise TypeError("Type not serializable")
 
-        dump(saves, open("saves.json", "w"), default=serializer)
+        dump(saves, open("saves.json", "w"), default=saves_serializer)
+
+        def settings_serializer(obj):
+            if isinstance(obj, StringVar):
+                return obj.get()
+
+            if isinstance(obj, BooleanVar):
+                return bool(obj.get())
+
+            raise TypeError("Type not serializable")
+
+        dump(settings, open("settings.json", "w"), default=settings_serializer)
 
     @staticmethod
     def continue_save(i):
         saves[i].update({"last_opened": datetime.now()})
+        print(saves[i])
         Show.saves()
 
 
-Show.home()
+exec(f"Show.{settings["startup"].get().lower()}()")
 
 main.mainloop()
