@@ -107,7 +107,7 @@ class Show:
         bf = Frame(frame, background=frame.cget("background"))
         bf.pack(fill="x", pady=(10, 0))
 
-        Button(bf, text="New save", command=Saves.new_save, foreground="#cc0000", activeforeground="#cc0000").pack(
+        Button(bf, text="New save", command=Show.new_game, foreground="#cc0000", activeforeground="#cc0000").pack(
             fill="x", side="left", expand=True)
         Button(bf, text="🗑", command=lambda: Saves.delete_save(range(len(saves))), width=3, foreground="#cc0000",
                activeforeground="#cc0000").pack(side="left", padx=(10, 0))
@@ -124,8 +124,49 @@ class Show:
             Button(bf, text="🗑", command=lambda j=i: Saves.delete_save([j]), width=3).pack(side="left", padx=(10, 0))
 
     @staticmethod
-    def new_game(i):
-        pass
+    def new_game():
+        grid(2, 2)
+        main.columnconfigure(0, weight=0)
+        Show.show_tabs(row=0, rowspan=r_(), column=0, sticky="ns")
+
+        player_name = StringVar(value="Player")
+
+        def validate_input():
+            value = player_name.get()
+
+            # noinspection SpellCheckingInspection
+            allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+            filtered_value = "".join(c for c in value if c in allowed_chars)
+
+            if len(filtered_value) > 16:
+                filtered_value = filtered_value[:16]
+
+            player_name.set(filtered_value)
+
+        player_name.trace("w", lambda *_: validate_input())
+
+        Entry(textvariable=player_name, justify="center", width=26).grid(row=0, column=1, columnspan=c_() - 1)
+
+        def finalise_new_game():
+            name = player_name.get().strip() if player_name.get().strip() else f"Save {len(saves) + 1}"
+
+            true_name = name
+
+            existing_names = [i["name"] for i in saves]
+
+            if name in existing_names:
+                counter = 2
+                new_name = name
+                while new_name in existing_names:
+                    new_name = f"{name} ({counter})"
+                    counter += 1
+                name = new_name
+
+            saves.append({"name": name, "last_opened": datetime.now(), "true_name": true_name})
+
+            Saves.continue_save(len(saves) - 1)
+
+        Button(text="Save character", command=finalise_new_game).grid(row=r_() - 1, column=1, columnspan=c_() - 1)
 
     @staticmethod
     def home():
@@ -181,15 +222,15 @@ class Show:
         bf = Frame(frame, background=frame.cget("background"))
         bf.pack()
 
-        Label(bf, text="When opening the game, go to:", background=frame.cget("background")).pack(side="left",
-                                                                                                  padx=(0, 5))
+        Label(bf, text="When opening the game, go to:", background=frame.cget("background")).pack(side="left")
         OptionMenu(bf, settings["startup"], settings["startup"].get(), *["Home", "Saves", "Settings"]).pack(side="left")
         Style().configure("TMenubutton", background=frame.cget("background"))
 
         bf = Frame(frame, background=frame.cget("background"))
         bf.pack(pady=(10, 0))
 
-        Label(bf, text="Resolution:", background=frame.cget("background")).pack(side="left", padx=(0, 10))
+        Label(bf, text="Resolution:", background=frame.cget("background")).pack(side="left")
+
         OptionMenu(bf, settings["resolution"], settings["resolution"].get(), *resolutions,
                    command=lambda _: resize_window(main, int(settings["resolution"].get().split("x")[0]),
                                                    int(settings["resolution"].get().split("x")[1]))).pack(side="left")
@@ -198,21 +239,20 @@ class Show:
         bf = Frame(frame, background=frame.cget("background"))
         bf.pack(pady=(10, 0))
 
-        Checkbutton(bf, variable=settings["fullscreen"], text="Fullscreen",
+        Label(bf, text="Fullscreen:", background=frame.cget("background")).pack(side="left", padx=(0, 5))
+
+        Checkbutton(bf, variable=settings["fullscreen"],
                     command=lambda: main.attributes("-fullscreen", settings["fullscreen"].get())).pack(side="left")
         Style().configure("TCheckbutton", background=frame.cget("background"))
 
 
 class Saves:
     @staticmethod
-    def new_save():
-        saves.append({"name": f"Save {len(saves) + 1}", "last_opened": datetime.now()})
-        Show.saves()
-        Show.new_game(len(saves) - 1)
-
-    @staticmethod
     def delete_save(i):
         if len(i) > 1 and not askokcancel("", "Are you sure you want to delete all saves?"):
+            return
+
+        elif len(i) < 2 and not askokcancel("", "Are you sure you want to the delete this save?"):
             return
 
         for i in reversed(sorted(i)):
