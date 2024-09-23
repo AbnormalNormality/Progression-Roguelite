@@ -131,7 +131,7 @@ class Show:
 
         player_name = StringVar(value="Player")
 
-        def validate_input():
+        def validate_input():p
             value = player_name.get()
 
             # noinspection SpellCheckingInspection
