@@ -8,7 +8,8 @@ from pygame import mixer
 from webbrowser import open as w_open
 
 import AliasTkFunctions
-from AliasTkFunctions import fix_resolution_issue, resize_window, initiate_grid, grid, ScrollableFrame
+from AliasTkFunctions import fix_resolution_issue, resize_window, initiate_grid, grid, ScrollableFrame, ToolTip
+from AliasGeneralFunctions import time_ago
 
 fix_resolution_issue()
 
@@ -70,13 +71,21 @@ settings = load(open("settings.json"), object_hook=settings_parser)
 if "startup" not in settings:
     settings.update({"startup": StringVar(value="Home")})
 
-resolutions = ["640x360", "960x540", "1280x720", "1600x900", "1920x1080"]
+resolutions = [
+    "640x360",
+    "960x540",
+    "1280x720",
+    "1600x900",
+    "1920x1080"
+]
+
+# for i, res in enumerate(resolutions):
+#     width, height = map(int, res.split("x"))
+#     aspect_ratio = f"{width // gcd(width, height)}:{height // gcd(width, height)}"
+#     resolutions[i] = f"{res} {aspect_ratio}"
 
 if "resolution" not in settings:
     settings.update({"resolution": StringVar(value=resolutions[0])})
-
-size = [int(a) for a in settings["resolution"].get().split("x")]
-resize_window(main, size[0], size[1])
 
 if "fullscreen" not in settings:
     settings.update({"fullscreen": BooleanVar(value=False)})
@@ -119,38 +128,52 @@ class Show:
             bf = Frame(frame, background=frame.cget("background"))
             bf.pack(fill="x", pady=(10, 0))
 
-            Button(bf, text=f"{f["name"]}", command=lambda j=i: Saves.continue_save(j)).pack(fill="x", side="left",
-                                                                                             expand=True)
+            button = Button(bf, text=f"{f["name"]}", command=lambda j=i: Saves.continue_save(j))
+            button.pack(fill="x", side="left", expand=True)
+
+            tooltip = f"Name: {f["dialog_name"]}\nDifficulty: {f["difficulty"]}\nLast opened: {
+                      time_ago(f["last_opened"])}"
+            ToolTip(button, tooltip, x_offset=0, y_offset=30, wait_time=150, wraplength=300, follow_once=True)
+
             Button(bf, text="🗑", command=lambda j=i: Saves.delete_save([j]), width=3).pack(side="left", padx=(10, 0))
 
     @staticmethod
     def new_game():
-        grid(2, 2)
+        grid(3, 2)
         main.columnconfigure(0, weight=0)
         Show.show_tabs(row=0, rowspan=r_(), column=0, sticky="ns")
 
         player_name = StringVar(value="Player")
 
-        def validate_input():p
-            value = player_name.get()
+        def validate_input():
+            value = player_name.get().replace(" ", "-")
 
             # noinspection SpellCheckingInspection
             allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
             filtered_value = "".join(c for c in value if c in allowed_chars)
 
-            if len(filtered_value) > 16:
-                filtered_value = filtered_value[:16]
+            if len(filtered_value) > 32:
+                filtered_value = filtered_value[:32]
 
             player_name.set(filtered_value)
 
         player_name.trace("w", lambda *_: validate_input())
 
-        Entry(textvariable=player_name, justify="center", width=26).grid(row=0, column=1, columnspan=c_() - 1)
+        name_entry = Entry(textvariable=player_name, justify="center", width=26)
+        name_entry.grid(row=0, column=1, columnspan=c_() - 1)
+        name_entry.bind("<Control-BackSpace>", lambda _: player_name.set(value=""))
+
+        frame = Frame(background="#e0e0e0")
+        frame.grid(row=1, column=1)
+        Label(frame, text="Select a difficulty", background=frame.cget("background")).pack()
+
+        difficulty_var = IntVar(value=3)
+        Scale(frame, from_=1, to=9, orient="horizontal", background=frame.cget("background"),
+              highlightbackground=frame.cget("background"), variable=difficulty_var, length=150, width=17).pack()
 
         def finalise_new_game():
             name = player_name.get().strip() if player_name.get().strip() else f"Save {len(saves) + 1}"
-
-            true_name = name
+            dialog_name = name
 
             existing_names = [i["name"] for i in saves]
 
@@ -162,7 +185,8 @@ class Show:
                     counter += 1
                 name = new_name
 
-            saves.append({"name": name, "last_opened": datetime.now(), "true_name": true_name})
+            saves.append({"name": name, "last_opened": datetime.now(), "dialog_name": dialog_name,
+                          "difficulty": difficulty_var.get()})
 
             Saves.continue_save(len(saves) - 1)
 
@@ -232,8 +256,7 @@ class Show:
         Label(bf, text="Resolution:", background=frame.cget("background")).pack(side="left")
 
         OptionMenu(bf, settings["resolution"], settings["resolution"].get(), *resolutions,
-                   command=lambda _: resize_window(main, int(settings["resolution"].get().split("x")[0]),
-                                                   int(settings["resolution"].get().split("x")[1]))).pack(side="left")
+                   command=lambda _: update_resolution()).pack(side="left")
         Style().configure("TMenubutton", background=frame.cget("background"))
 
         bf = Frame(frame, background=frame.cget("background"))
@@ -252,7 +275,7 @@ class Saves:
         if len(i) > 1 and not askokcancel("", "Are you sure you want to delete all saves?"):
             return
 
-        elif len(i) < 2 and not askokcancel("", "Are you sure you want to the delete this save?"):
+        elif len(i) == 1 and not askokcancel("", "Are you sure you want to the delete this save?"):
             return
 
         for i in reversed(sorted(i)):
@@ -286,6 +309,18 @@ class Saves:
         Show.saves()
 
 
+def update_resolution():
+    w, h = map(int, settings["resolution"].get().split(" ")[0].split("x"))
+
+    if w == main.winfo_screenwidth() and h == main.winfo_screenheight():
+        main.state("zoomed")
+    else:
+        main.state("normal")
+
+    resize_window(main, w, h)
+
+
+update_resolution()
 exec(f"Show.{settings["startup"].get().lower()}()")
 
 main.mainloop()
