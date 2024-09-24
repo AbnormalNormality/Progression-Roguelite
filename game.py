@@ -95,7 +95,7 @@ class Show:
 
         grid(1, 2)
         main.columnconfigure(0, weight=0)
-        Show.home_tabs("saves", row=0, column=0, sticky="ns")
+        Show.tabs("saves", row=0, column=0, sticky="ns")
 
         frame = ScrollableFrame(main, horizontal_scrollbar=False, row=0, column=1, sticky="nsew")
         frame.configure(padx=100, pady=20, background="#e0e0e0")
@@ -136,7 +136,7 @@ class Show:
     def new_game():
         grid(3, 2)
         main.columnconfigure(0, weight=0)
-        Show.home_tabs(row=0, rowspan=r_(), column=0, sticky="ns")
+        Show.tabs(row=0, rowspan=r_(), column=0, sticky="ns")
 
         player_name = StringVar(value="Player")
 
@@ -189,13 +189,11 @@ class Show:
 
     @staticmethod
     def home():
-        global saves, current_player_data
-
-        current_player_data = {}
+        global saves
 
         grid(2, 2)
         main.columnconfigure(0, weight=0)
-        Show.home_tabs("home", row=0, rowspan=r_(), column=0, sticky="ns")
+        Show.tabs("home", row=0, rowspan=r_(), column=0, sticky="ns")
 
         Label(text="Title", anchor="s", pady=5, font="TkDefaultFont 18", background="#e0e0e0").grid(row=0, column=1,
                                                                                                     sticky="nsew")
@@ -204,30 +202,58 @@ class Show:
                                                                                                        sticky="nsew")
 
     @staticmethod
-    def home_tabs(menu=None, **kwargs):
+    def tabs(menu=None, **kwargs):
         option_frame = Frame(background="#d0d0d0", padx=5)
         option_frame.ignore_update_bg = True
         option_frame.grid(**kwargs)
 
-        Button(option_frame, text="🏠", width=3, command=Show.home, foreground="#cc0000",
-               state="disabled" if menu == "home" else "normal", activeforeground="#cc0000").pack(side="top",
-                                                                                                  pady=(5, 0))
+        if len(current_player_data) > 0:
+            Button(option_frame, text="✨", width=3, command=Show.main_menu, foreground="#faca0c",
+                   activeforeground="#faca0c", state="disabled" if menu == "main_menu" else "normal").pack(side="top",
+                                                                                                           pady=(5, 0))
 
-        Button(option_frame, text="💾", width=3, command=Show.saves, foreground="#1750eb",
-               state="disabled" if menu == "saves" else "normal", activeforeground="#1750eb").pack(side="top",
-                                                                                                   pady=(5, 0))
+            Button(option_frame, text="🎴", width=3, command=Show.skill_tree, foreground="#b857d9",
+                   activeforeground="#b857d9", state="disabled" if menu == "skill_tree" else "normal").pack(side="top",
+                                                                                                            pady=(5, 0))
 
-        Button(option_frame, text="⚙️", width=3, command=Show.settings, foreground="#202020",
-               state="disabled" if menu == "settings" else "normal", activeforeground="#202020").pack(side="top",
+            Button(option_frame, text="⚙️", width=3, command=Show.settings, foreground="#202020",
+                   state="disabled" if menu == "game_settings" else "normal",
+                   activeforeground="#202020").pack(side="top", pady=(5, 0))
+
+            # noinspection SpellCheckingInspection
+            Button(option_frame, text="🌐", width=3, command=lambda:
+                   w_open("https://www.github.com/AbnormalNormality/Wip-Roguelite/"), foreground="#83cbff",
+                   activeforeground="#83cbff").pack(side="top", pady=(5, 0))
+
+            def close_save():
+                global current_player_data
+                Saves.save()
+                current_player_data = {}
+                Show.saves()
+
+            Button(option_frame, text="⬅", width=3, command=close_save, foreground="#ff0000",
+                   activeforeground="#ff0000").pack(side="bottom", pady=(0, 5))
+
+        else:
+            Button(option_frame, text="🏠", width=3, command=Show.home, foreground="#cc0000",
+                   state="disabled" if menu == "home" else "normal", activeforeground="#cc0000").pack(side="top",
                                                                                                       pady=(5, 0))
 
-        # noinspection SpellCheckingInspection
-        Button(option_frame, text="🌐", width=3, command=lambda:
-               w_open("https://www.github.com/AbnormalNormality/Wip-Roguelite/"), foreground="#83cbff",
-               activeforeground="#83cbff").pack(side="top", pady=(5, 0))
+            Button(option_frame, text="💾", width=3, command=Show.saves, foreground="#1750eb",
+                   state="disabled" if menu == "saves" else "normal", activeforeground="#1750eb").pack(side="top",
+                                                                                                       pady=(5, 0))
 
-        Button(option_frame, text="❌", width=3, command=lambda: (Saves.save(), main.destroy()), foreground="#ff0000",
-               activeforeground="#ff0000").pack(side="bottom", pady=(0, 5))
+            Button(option_frame, text="⚙️", width=3, command=Show.settings, foreground="#202020",
+                   state="disabled" if menu == "settings" else "normal", activeforeground="#202020").pack(side="top",
+                                                                                                          pady=(5, 0))
+
+            # noinspection SpellCheckingInspection
+            Button(option_frame, text="🌐", width=3, command=lambda:
+                   w_open("https://www.github.com/AbnormalNormality/Wip-Roguelite/"), foreground="#83cbff",
+                   activeforeground="#83cbff").pack(side="top", pady=(5, 0))
+
+            Button(option_frame, text="❌", width=3, command=lambda: (Saves.save(), main.destroy()),
+                   foreground="#ff0000", activeforeground="#ff0000").pack(side="bottom", pady=(0, 5))
 
     @staticmethod
     def settings():
@@ -235,9 +261,9 @@ class Show:
         main.columnconfigure(0, weight=0)
 
         if len(current_player_data) > 0:
-            Show.game_tabs("game_settings", row=0, rowspan=r_(), column=0, sticky="ns")
+            Show.tabs("game_settings", row=0, rowspan=r_(), column=0, sticky="ns")
         else:
-            Show.home_tabs("settings", row=0, column=0, sticky="ns")
+            Show.tabs("settings", row=0, column=0, sticky="ns")
 
         frame = ScrollableFrame(main, horizontal_scrollbar=False, row=0, column=1, sticky="nsew")
         frame.configure(pady=20, background="#e0e0e0", padx=20)
@@ -272,7 +298,7 @@ class Show:
     def main_menu():
         grid(2, 2)
         main.columnconfigure(0, weight=0)
-        Show.game_tabs("main_menu", row=0, rowspan=r_(), column=0, sticky="ns")
+        Show.tabs("main_menu", row=0, rowspan=r_(), column=0, sticky="ns")
 
         Label(text=current_player_data["name"], font="TkDefaultFont 14",
               background=main.cget("background")).grid(row=0, column=1)
@@ -280,36 +306,10 @@ class Show:
         Button(text=" Set out ").grid(row=r_() - 1, column=1)
 
     @staticmethod
-    def game_tabs(menu=None, **kwargs):
-        option_frame = Frame(background="#d0d0d0", padx=5)
-        option_frame.ignore_update_bg = True
-        option_frame.grid(**kwargs)
-
-        Button(option_frame, text="✨", width=3, command=Show.main_menu, foreground="#faca0c",
-               activeforeground="#faca0c", state="disabled" if menu == "main_menu" else "normal").pack(side="top",
-                                                                                                       pady=(5, 0))
-
-        Button(option_frame, text="🎴", width=3, command=Show.skill_tree, foreground="#b857d9",
-               activeforeground="#b857d9", state="disabled" if menu == "skill_tree" else "normal").pack(side="top",
-                                                                                                        pady=(5, 0))
-
-        Button(option_frame, text="⚙️", width=3, command=Show.settings, foreground="#202020",
-               state="disabled" if menu == "game_settings" else "normal", activeforeground="#202020").pack(side="top",
-                                                                                                           pady=(5, 0))
-
-        # noinspection SpellCheckingInspection
-        Button(option_frame, text="🌐", width=3, command=lambda:
-               w_open("https://www.github.com/AbnormalNormality/Wip-Roguelite/"), foreground="#83cbff",
-               activeforeground="#83cbff").pack(side="top", pady=(5, 0))
-
-        Button(option_frame, text="⬅", width=3, command=lambda: (Saves.save(), Show.saves()), foreground="#ff0000",
-               activeforeground="#ff0000").pack(side="bottom", pady=(0, 5))
-
-    @staticmethod
     def skill_tree():
         grid(1, 2)
         main.columnconfigure(0, weight=0)
-        Show.game_tabs("skill_tree", row=0, rowspan=r_(), column=0, sticky="ns")
+        Show.tabs("skill_tree", row=0, rowspan=r_(), column=0, sticky="ns")
 
         frame = ScrollableFrame(main, horizontal_scrollbar=False, row=0, column=1, sticky="nsew")
         frame.configure(pady=20, background="#e0e0e0", padx=20)
