@@ -189,7 +189,9 @@ class Show:
 
     @staticmethod
     def home():
-        global saves
+        global saves, current_player_data
+
+        current_player_data = {}
 
         grid(2, 2)
         main.columnconfigure(0, weight=0)
@@ -231,7 +233,11 @@ class Show:
     def settings():
         grid(1, 2)
         main.columnconfigure(0, weight=0)
-        Show.home_tabs("settings", row=0, column=0, sticky="ns")
+
+        if len(current_player_data) > 0:
+            Show.game_tabs("game_settings", row=0, rowspan=r_(), column=0, sticky="ns")
+        else:
+            Show.home_tabs("settings", row=0, column=0, sticky="ns")
 
         frame = ScrollableFrame(main, horizontal_scrollbar=False, row=0, column=1, sticky="nsew")
         frame.configure(pady=20, background="#e0e0e0", padx=20)
@@ -289,7 +295,7 @@ class Show:
                activeforeground="#1750eb", state="disabled" if menu == "skill_tree" else "normal").pack(side="top",
                                                                                                         pady=(5, 0))
 
-        Button(option_frame, text="⚙️", width=3, command=Show.game_settings, foreground="#202020",
+        Button(option_frame, text="⚙️", width=3, command=Show.settings, foreground="#202020",
                state="disabled" if menu == "game_settings" else "normal", activeforeground="#202020").pack(side="top",
                                                                                                            pady=(5, 0))
 
@@ -306,15 +312,6 @@ class Show:
         grid(1, 2)
         main.columnconfigure(0, weight=0)
         Show.game_tabs("skill_tree", row=0, rowspan=r_(), column=0, sticky="ns")
-
-        frame = ScrollableFrame(main, horizontal_scrollbar=False, row=0, column=1, sticky="nsew")
-        frame.configure(pady=20, background="#e0e0e0", padx=20)
-
-    @staticmethod
-    def game_settings():
-        grid(1, 2)
-        main.columnconfigure(0, weight=0)
-        Show.game_tabs("game_settings", row=0, rowspan=r_(), column=0, sticky="ns")
 
         frame = ScrollableFrame(main, horizontal_scrollbar=False, row=0, column=1, sticky="nsew")
         frame.configure(pady=20, background="#e0e0e0", padx=20)
