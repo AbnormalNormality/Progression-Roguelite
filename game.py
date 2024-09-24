@@ -79,11 +79,6 @@ resolutions = [
     "1920x1080"
 ]
 
-# for i, res in enumerate(resolutions):
-#     width, height = map(int, res.split("x"))
-#     aspect_ratio = f"{width // gcd(width, height)}:{height // gcd(width, height)}"
-#     resolutions[i] = f"{res} {aspect_ratio}"
-
 if "resolution" not in settings:
     settings.update({"resolution": StringVar(value=resolutions[0])})
 
@@ -100,7 +95,7 @@ class Show:
 
         grid(1, 2)
         main.columnconfigure(0, weight=0)
-        Show.show_tabs("saves", row=0, column=0, sticky="ns")
+        Show.home_tabs("saves", row=0, column=0, sticky="ns")
 
         frame = ScrollableFrame(main, horizontal_scrollbar=False, row=0, column=1, sticky="nsew")
         frame.configure(padx=100, pady=20, background="#e0e0e0")
@@ -128,10 +123,10 @@ class Show:
             bf = Frame(frame, background=frame.cget("background"))
             bf.pack(fill="x", pady=(10, 0))
 
-            button = Button(bf, text=f"{f["name"]}", command=lambda j=i: Saves.continue_save(j))
+            button = Button(bf, text=f"{f["save_name"]}", command=lambda j=i: Saves.continue_save(j))
             button.pack(fill="x", side="left", expand=True)
 
-            tooltip = f"Name: {f["dialog_name"]}\nDifficulty: {f["difficulty"]}\nLast opened: {
+            tooltip = f"Name: {f["name"]}\nDifficulty: {f["difficulty"]}\nLast opened: {
                       time_ago(f["last_opened"])}"
             ToolTip(button, tooltip, x_offset=0, y_offset=30, wait_time=150, wraplength=300, follow_once=True)
 
@@ -141,7 +136,7 @@ class Show:
     def new_game():
         grid(3, 2)
         main.columnconfigure(0, weight=0)
-        Show.show_tabs(row=0, rowspan=r_(), column=0, sticky="ns")
+        Show.home_tabs(row=0, rowspan=r_(), column=0, sticky="ns")
 
         player_name = StringVar(value="Player")
 
@@ -152,8 +147,8 @@ class Show:
             allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
             filtered_value = "".join(c for c in value if c in allowed_chars)
 
-            if len(filtered_value) > 32:
-                filtered_value = filtered_value[:32]
+            if len(filtered_value) > 16:
+                filtered_value = filtered_value[:16]
 
             player_name.set(filtered_value)
 
@@ -173,9 +168,9 @@ class Show:
 
         def finalise_new_game():
             name = player_name.get().strip() if player_name.get().strip() else f"Save {len(saves) + 1}"
-            dialog_name = name
+            unformatted_name = name
 
-            existing_names = [i["name"] for i in saves]
+            existing_names = [i["save_name"] for i in saves]
 
             if name in existing_names:
                 counter = 2
@@ -185,7 +180,7 @@ class Show:
                     counter += 1
                 name = new_name
 
-            saves.append({"name": name, "last_opened": datetime.now(), "dialog_name": dialog_name,
+            saves.append({"save_name": name, "last_opened": datetime.now(), "name": unformatted_name,
                           "difficulty": difficulty_var.get()})
 
             Saves.continue_save(len(saves) - 1)
@@ -198,7 +193,7 @@ class Show:
 
         grid(2, 2)
         main.columnconfigure(0, weight=0)
-        Show.show_tabs("home", row=0, rowspan=r_(), column=0, sticky="ns")
+        Show.home_tabs("home", row=0, rowspan=r_(), column=0, sticky="ns")
 
         Label(text="Title", anchor="s", pady=5, font="TkDefaultFont 18", background="#e0e0e0").grid(row=0, column=1,
                                                                                                     sticky="nsew")
@@ -207,7 +202,7 @@ class Show:
                                                                                                        sticky="nsew")
 
     @staticmethod
-    def show_tabs(menu=None, **kwargs):
+    def home_tabs(menu=None, **kwargs):
         option_frame = Frame(background="#d0d0d0", padx=5)
         option_frame.ignore_update_bg = True
         option_frame.grid(**kwargs)
@@ -232,26 +227,25 @@ class Show:
         Button(option_frame, text="❌", width=3, command=lambda: (Saves.save(), main.destroy()), foreground="#ff0000",
                activeforeground="#ff0000").pack(side="bottom", pady=(0, 5))
 
-        mixer.music.stop()
-
     @staticmethod
     def settings():
         grid(1, 2)
         main.columnconfigure(0, weight=0)
-        Show.show_tabs("settings", row=0, column=0, sticky="ns")
+        Show.home_tabs("settings", row=0, column=0, sticky="ns")
 
         frame = ScrollableFrame(main, horizontal_scrollbar=False, row=0, column=1, sticky="nsew")
-        frame.configure(pady=20, background="#e0e0e0")
+        frame.configure(pady=20, background="#e0e0e0", padx=20)
 
         bf = Frame(frame, background=frame.cget("background"))
-        bf.pack()
+        bf.pack(anchor="w")
 
         Label(bf, text="When opening the game, go to:", background=frame.cget("background")).pack(side="left")
-        OptionMenu(bf, settings["startup"], settings["startup"].get(), *["Home", "Saves", "Settings"]).pack(side="left")
+        OptionMenu(bf, settings["startup"], settings["startup"].get(), *["Home", "Saves", "Settings",
+                                                                         "Most Recent Game"]).pack(side="left")
         Style().configure("TMenubutton", background=frame.cget("background"))
 
         bf = Frame(frame, background=frame.cget("background"))
-        bf.pack(pady=(10, 0))
+        bf.pack(pady=(10, 0), anchor="w")
 
         Label(bf, text="Resolution:", background=frame.cget("background")).pack(side="left")
 
@@ -260,7 +254,7 @@ class Show:
         Style().configure("TMenubutton", background=frame.cget("background"))
 
         bf = Frame(frame, background=frame.cget("background"))
-        bf.pack(pady=(10, 0))
+        bf.pack(pady=(10, 0), anchor="w")
 
         Label(bf, text="Fullscreen:", background=frame.cget("background")).pack(side="left", padx=(0, 5))
 
@@ -268,14 +262,71 @@ class Show:
                     command=lambda: main.attributes("-fullscreen", settings["fullscreen"].get())).pack(side="left")
         Style().configure("TCheckbutton", background=frame.cget("background"))
 
+    @staticmethod
+    def main_menu():
+        grid(2, 2)
+        main.columnconfigure(0, weight=0)
+        Show.game_tabs("main_menu", row=0, rowspan=r_(), column=0, sticky="ns")
+
+        Label(text=current_player_data["name"], font="TkDefaultFont 14",
+              background=main.cget("background")).grid(row=0, column=1)
+
+        Button(text=" Set out ").grid(row=r_() - 1, column=1)
+
+        print(current_player_data)
+
+    @staticmethod
+    def game_tabs(menu=None, **kwargs):
+        option_frame = Frame(background="#d0d0d0", padx=5)
+        option_frame.ignore_update_bg = True
+        option_frame.grid(**kwargs)
+
+        Button(option_frame, text="✨", width=3, command=Show.main_menu, foreground="#cc0000",
+               activeforeground="#cc0000", state="disabled" if menu == "main_menu" else "normal").pack(side="top",
+                                                                                                       pady=(5, 0))
+
+        Button(option_frame, text="🎴", width=3, command=Show.skill_tree, foreground="#1750eb",
+               activeforeground="#1750eb", state="disabled" if menu == "skill_tree" else "normal").pack(side="top",
+                                                                                                        pady=(5, 0))
+
+        Button(option_frame, text="⚙️", width=3, command=Show.game_settings, foreground="#202020",
+               state="disabled" if menu == "game_settings" else "normal", activeforeground="#202020").pack(side="top",
+                                                                                                           pady=(5, 0))
+
+        # noinspection SpellCheckingInspection
+        Button(option_frame, text="🌐", width=3, command=lambda:
+               w_open("https://www.github.com/AbnormalNormality/Wip-Roguelite/"), foreground="#83cbff",
+               activeforeground="#83cbff").pack(side="top", pady=(5, 0))
+
+        Button(option_frame, text="⬅", width=3, command=lambda: (Saves.save(), Show.saves()), foreground="#ff0000",
+               activeforeground="#ff0000").pack(side="bottom", pady=(0, 5))
+
+    @staticmethod
+    def skill_tree():
+        grid(1, 2)
+        main.columnconfigure(0, weight=0)
+        Show.game_tabs("skill_tree", row=0, rowspan=r_(), column=0, sticky="ns")
+
+        frame = ScrollableFrame(main, horizontal_scrollbar=False, row=0, column=1, sticky="nsew")
+        frame.configure(pady=20, background="#e0e0e0", padx=20)
+
+    @staticmethod
+    def game_settings():
+        grid(1, 2)
+        main.columnconfigure(0, weight=0)
+        Show.game_tabs("game_settings", row=0, rowspan=r_(), column=0, sticky="ns")
+
+        frame = ScrollableFrame(main, horizontal_scrollbar=False, row=0, column=1, sticky="nsew")
+        frame.configure(pady=20, background="#e0e0e0", padx=20)
+
 
 class Saves:
     @staticmethod
     def delete_save(i):
-        if len(i) > 1 and not askokcancel("", "Are you sure you want to delete all saves?"):
+        if len(i) > 1 and not askokcancel(f"{main.title()}", "Are you sure you want to delete all saves?"):
             return
 
-        elif len(i) == 1 and not askokcancel("", "Are you sure you want to the delete this save?"):
+        elif len(i) == 1 and not askokcancel(main.title(), "Are you sure you want to the delete this save?"):
             return
 
         for i in reversed(sorted(i)):
@@ -304,9 +355,14 @@ class Saves:
 
     @staticmethod
     def continue_save(i):
-        saves[i].update({"last_opened": datetime.now()})
-        print(saves[i])
+        global current_player_data
+
+        player_data = saves[i]
+        player_data.update({"last_opened": datetime.now()})
+        current_player_data = player_data
+
         Show.saves()
+        Show.main_menu()
 
 
 def update_resolution():
@@ -320,7 +376,17 @@ def update_resolution():
     resize_window(main, w, h)
 
 
+current_player_data = {}
+
 update_resolution()
-exec(f"Show.{settings["startup"].get().lower()}()")
+
+if settings["startup"].get().lower() == "most recent game":
+    if len(saves) > 0:
+        saves = sorted(saves, key=lambda x: x["last_opened"], reverse=True)
+        Saves.continue_save(0)
+    else:
+        Show.saves()
+else:
+    exec(f"Show.{settings["startup"].get().lower()}()")
 
 main.mainloop()
