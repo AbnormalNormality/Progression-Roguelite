@@ -279,20 +279,18 @@ class Show:
 
         Button(text=" Set out ").grid(row=r_() - 1, column=1)
 
-        print(current_player_data)
-
     @staticmethod
     def game_tabs(menu=None, **kwargs):
         option_frame = Frame(background="#d0d0d0", padx=5)
         option_frame.ignore_update_bg = True
         option_frame.grid(**kwargs)
 
-        Button(option_frame, text="✨", width=3, command=Show.main_menu, foreground="#cc0000",
-               activeforeground="#cc0000", state="disabled" if menu == "main_menu" else "normal").pack(side="top",
+        Button(option_frame, text="✨", width=3, command=Show.main_menu, foreground="#faca0c",
+               activeforeground="#faca0c", state="disabled" if menu == "main_menu" else "normal").pack(side="top",
                                                                                                        pady=(5, 0))
 
-        Button(option_frame, text="🎴", width=3, command=Show.skill_tree, foreground="#1750eb",
-               activeforeground="#1750eb", state="disabled" if menu == "skill_tree" else "normal").pack(side="top",
+        Button(option_frame, text="🎴", width=3, command=Show.skill_tree, foreground="#b857d9",
+               activeforeground="#b857d9", state="disabled" if menu == "skill_tree" else "normal").pack(side="top",
                                                                                                         pady=(5, 0))
 
         Button(option_frame, text="⚙️", width=3, command=Show.settings, foreground="#202020",
