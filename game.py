@@ -203,6 +203,8 @@ class Show:
 
     @staticmethod
     def tabs(menu=None, **kwargs):
+        global current_player_data
+
         option_frame = Frame(background="#d0d0d0", padx=5)
         option_frame.ignore_update_bg = True
         option_frame.grid(**kwargs)
@@ -217,7 +219,7 @@ class Show:
                                                                                                             pady=(5, 0))
 
             Button(option_frame, text="⚙️", width=3, command=Show.settings, foreground="#202020",
-                   state="disabled" if menu == "game_settings" else "normal",
+                   state="disabled" if menu == "settings" else "normal",
                    activeforeground="#202020").pack(side="top", pady=(5, 0))
 
             # noinspection SpellCheckingInspection
@@ -261,7 +263,7 @@ class Show:
         main.columnconfigure(0, weight=0)
 
         if len(current_player_data) > 0:
-            Show.tabs("game_settings", row=0, rowspan=r_(), column=0, sticky="ns")
+            Show.tabs("settings", row=0, rowspan=r_(), column=0, sticky="ns")
         else:
             Show.tabs("settings", row=0, column=0, sticky="ns")
 
